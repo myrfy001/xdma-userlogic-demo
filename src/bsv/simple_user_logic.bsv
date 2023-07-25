@@ -65,7 +65,8 @@ module mkUserLogic(UserLogic#(CONTROL_ADDR_WIDTH, CONTROL_DATA_WIDTH));
         // interface awaddr = q_addr.enq;
 
         method Action awaddr(Bit#(CONTROL_ADDR_WIDTH) addr);
-            if (True) begin
+            // 为何这里的写法会使得综合后该条件永远不成立呢？
+            if (q_addr.notFull) begin
                 q_addr.enq(addr);
             end
         endmethod
