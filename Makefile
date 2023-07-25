@@ -1,0 +1,71 @@
+
+DIR_OUTPUT ?= output
+DIR_BUILD = build
+DIR_RTL = src/verilog
+DIR_BSV_SRC = src/bsv
+DIR_XDC = xdc
+DIR_IPS = ips
+PART = xcvu13p-fhgb2104-2-i
+DIR_GENERATE = generate
+DIR_BSV_GENERATED = $(DIR_GENERATE)/bsv
+DIR_IP_GENERATED = $(DIR_GENERATE)/ip
+
+TARGETFILE ?= $(DIR_BSV_SRC)/simple_user_logic.bsv
+TOPMODULE ?= mkUserLogic
+
+export DIR_OUTPUT
+export DIR_RTL
+export DIR_XDC
+export DIR_IPS
+export PART
+export DIR_IP_GENERATED
+
+
+TRANSFLAGS = -aggressive-conditions # -lift -split-if
+RECOMPILEFLAGS = -u -show-compiles
+SCHEDFLAGS = -show-schedule -sched-dot # -show-rule-rel dMemInit_request_put doExecute
+#	-show-elab-progress
+DEBUGFLAGS = -check-assert \
+	-continue-after-errors \
+	-keep-fires \
+	-keep-inlined-boundaries \
+	-show-method-bvi \
+	-show-method-conf \
+	-show-module-use \
+	-show-range-conflict \
+	-show-stats \
+	-warn-action-shadowing \
+	-warn-method-urgency \
+	-promote-warnings ALL
+VERILOGFLAGS = -verilog -remove-dollar -remove-unused-modules # -use-dpi -verilog-filter cmd
+BLUESIMFLAGS = -parallel-sim-link 16 # -systemc
+DIR_FLAG_OUTDIR = -bdir $(DIR_BUILD) -info-dir $(DIR_BUILD) -simdir $(DIR_BUILD) -vdir $(DIR_BUILD)
+DIR_FLAG_WORKDIR = -fdir $(abspath .)
+DIR_FLAG_BSV_SRC = -p +:$(abspath $(DIR_BSV_SRC))
+DIR_FLAGS = $(DIR_FLAG_BSV_SRC) $(DIR_FLAG_OUTDIR) $(DIR_FLAG_WORKDIR)
+MISCFLAGS = -print-flags -show-timestamps -show-version # -steps 1000000000000000 -D macro
+RUNTIMEFLAGS = +RTS -K256M -RTS
+SIMEXE = $(DIR_BUILD)/out
+
+
+compile:
+	mkdir -p $(DIR_BUILD)
+	bsc -elab -sim -verbose $(BLUESIMFLAGS) $(DEBUGFLAGS) $(DIR_FLAGS) $(MISCFLAGS) $(RECOMPILEFLAGS) $(RUNTIMEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -g $(TOPMODULE) $(TARGETFILE)
+
+link: compile
+	bsc -sim $(BLUESIMFLAGS) $(DIR_FLAGS) $(RECOMPILEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -e $(TOPMODULE) -o $(SIMEXE)
+
+
+verilog: compile
+	bsc $(VERILOGFLAGS) $(DIR_FLAGS) $(RECOMPILEFLAGS) $(TRANSFLAGS) -g $(TOPMODULE) $(TARGETFILE)
+	mkdir -p $(DIR_BSV_GENERATED)
+	bluetcl listVlogFiles.tcl -bdir $(DIR_BUILD) -vdir $(DIR_BUILD) $(TOPMODULE) $(TOPMODULE) | grep -i '\.v' | xargs -I {} cp {} $(DIR_BSV_GENERATED)
+
+
+vivado:
+	vivado -mode batch -source demo_proj.tcl 2>&1 | tee ./run.log
+
+clean:
+	rm -rf $(DIR_OUTPUT) $(DIR_GENERATE) $(DIR_BUILD) .Xil .gen .srcs *.jou *.log
+
+PHONY: vivado
