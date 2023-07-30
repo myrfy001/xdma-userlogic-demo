@@ -1,2 +1,7 @@
 generate
 build
+output
+.Xil
+*.log
+*.jou
+*.vcd

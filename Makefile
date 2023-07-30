@@ -11,15 +11,22 @@ DIR_BSV_GENERATED = $(DIR_GENERATE)/bsv
 DIR_IP_GENERATED = $(DIR_GENERATE)/ip
 
 TARGETFILE ?= $(DIR_BSV_SRC)/simple_user_logic.bsv
-TOPMODULE ?= mkUserLogic
+BSV_TOPMODULE ?= mkUserLogic
+SIM_TOPMODULE ?= mkTB
+VERILOG_TOPMODULE ?= top
+TARGET_CLOCKS ?= main_clock
+MAX_NET_PATH_NUM ?= 1000
 
 export DIR_OUTPUT
 export DIR_RTL
 export DIR_XDC
 export DIR_IPS
 export PART
+export DIR_BSV_GENERATED
 export DIR_IP_GENERATED
-
+export VERILOG_TOPMODULE
+export TARGET_CLOCKS
+export MAX_NET_PATH_NUM
 
 TRANSFLAGS = -aggressive-conditions # -lift -split-if
 RECOMPILEFLAGS = -u -show-compiles
@@ -41,7 +48,8 @@ VERILOGFLAGS = -verilog -remove-dollar -remove-unused-modules # -use-dpi -verilo
 BLUESIMFLAGS = -parallel-sim-link 16 # -systemc
 DIR_FLAG_OUTDIR = -bdir $(DIR_BUILD) -info-dir $(DIR_BUILD) -simdir $(DIR_BUILD) -vdir $(DIR_BUILD)
 DIR_FLAG_WORKDIR = -fdir $(abspath .)
-DIR_FLAG_BSV_SRC = -p +:$(abspath $(DIR_BSV_SRC))
+DIR_FLAG_BSV_SRC = -p +:$(abspath $(DIR_BSV_SRC)) \
+	-p +:$(abspath $(DIR_BSV_SRC))/libs/blue-wrapper/src
 DIR_FLAGS = $(DIR_FLAG_BSV_SRC) $(DIR_FLAG_OUTDIR) $(DIR_FLAG_WORKDIR)
 MISCFLAGS = -print-flags -show-timestamps -show-version # -steps 1000000000000000 -D macro
 RUNTIMEFLAGS = +RTS -K256M -RTS
@@ -50,20 +58,23 @@ SIMEXE = $(DIR_BUILD)/out
 
 compile:
 	mkdir -p $(DIR_BUILD)
-	bsc -elab -sim -verbose $(BLUESIMFLAGS) $(DEBUGFLAGS) $(DIR_FLAGS) $(MISCFLAGS) $(RECOMPILEFLAGS) $(RUNTIMEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -g $(TOPMODULE) $(TARGETFILE)
+	bsc -elab -sim -verbose $(BLUESIMFLAGS) $(DEBUGFLAGS) $(DIR_FLAGS) $(MISCFLAGS) $(RECOMPILEFLAGS) $(RUNTIMEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -g $(BSV_TOPMODULE) $(TARGETFILE)
 
 link: compile
-	bsc -sim $(BLUESIMFLAGS) $(DIR_FLAGS) $(RECOMPILEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -e $(TOPMODULE) -o $(SIMEXE)
+	bsc -elab -sim -verbose $(BLUESIMFLAGS) $(DEBUGFLAGS) $(DIR_FLAGS) $(MISCFLAGS) $(RECOMPILEFLAGS) $(RUNTIMEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -g $(SIM_TOPMODULE) $(TARGETFILE)
+	bsc -sim $(BLUESIMFLAGS) $(DIR_FLAGS) $(RECOMPILEFLAGS) $(SCHEDFLAGS) $(TRANSFLAGS) -e $(SIM_TOPMODULE) -o $(SIMEXE)
 
 
 verilog: compile
-	bsc $(VERILOGFLAGS) $(DIR_FLAGS) $(RECOMPILEFLAGS) $(TRANSFLAGS) -g $(TOPMODULE) $(TARGETFILE)
+	bsc $(VERILOGFLAGS) $(DIR_FLAGS) $(RECOMPILEFLAGS) $(TRANSFLAGS) -g $(BSV_TOPMODULE) $(TARGETFILE)
 	mkdir -p $(DIR_BSV_GENERATED)
-	bluetcl listVlogFiles.tcl -bdir $(DIR_BUILD) -vdir $(DIR_BUILD) $(TOPMODULE) $(TOPMODULE) | grep -i '\.v' | xargs -I {} cp {} $(DIR_BSV_GENERATED)
-
+	bluetcl listVlogFiles.tcl -bdir $(DIR_BUILD) -vdir $(DIR_BUILD) $(BSV_TOPMODULE) $(BSV_TOPMODULE) | grep -i '\.v' | xargs -I {} cp {} $(DIR_BSV_GENERATED)
 
 vivado:
 	vivado -mode batch -source demo_proj.tcl 2>&1 | tee ./run.log
+
+vcheck:
+	iverilog -l $(DIR_IP_GENERATED)/xdma_0/xdma_0_stub.v -y $(DIR_RTL) -y $(DIR_BSV_GENERATED) $(DIR_RTL)/top.v
 
 clean:
 	rm -rf $(DIR_OUTPUT) $(DIR_GENERATE) $(DIR_BUILD) .Xil .gen .srcs *.jou *.log
