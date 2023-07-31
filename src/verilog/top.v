@@ -241,18 +241,18 @@ module top #
   IBUF   sys_reset_n_ibuf (.O(sys_rst_n_c), .I(sys_rst_n));
      
   // Descriptor Bypass Control Logic
-  wire c2h_dsc_byp_ready_0;
-  wire [63 : 0] c2h_dsc_byp_src_addr_0;
-  wire [63 : 0] c2h_dsc_byp_dst_addr_0;
-  wire [27 : 0] c2h_dsc_byp_len_0;
-  wire [15 : 0] c2h_dsc_byp_ctl_0;
-  wire c2h_dsc_byp_load_0;
-  wire h2c_dsc_byp_ready_0;
-  wire [63 : 0] h2c_dsc_byp_src_addr_0;
-  wire [63 : 0] h2c_dsc_byp_dst_addr_0;
-  wire [27 : 0] h2c_dsc_byp_len_0;
-  wire [15 : 0] h2c_dsc_byp_ctl_0;
-  wire h2c_dsc_byp_load_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*) wire c2h_dsc_byp_ready_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [63 : 0] c2h_dsc_byp_src_addr_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [63 : 0] c2h_dsc_byp_dst_addr_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [27 : 0] c2h_dsc_byp_len_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [15 : 0] c2h_dsc_byp_ctl_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire c2h_dsc_byp_load_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire h2c_dsc_byp_ready_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [63 : 0] h2c_dsc_byp_src_addr_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [63 : 0] h2c_dsc_byp_dst_addr_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [27 : 0] h2c_dsc_byp_len_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [15 : 0] h2c_dsc_byp_ctl_0;
+  (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire h2c_dsc_byp_load_0;
 
 
 
@@ -322,6 +322,8 @@ module top #
       .m_axil_rready    (m_axil_rready),
 
 
+
+
       // Descriptor Bypass
       .c2h_dsc_byp_ready_0    (c2h_dsc_byp_ready_0),
       .c2h_dsc_byp_src_addr_0 (c2h_dsc_byp_src_addr_0),
@@ -335,6 +337,7 @@ module top #
       .h2c_dsc_byp_len_0      (h2c_dsc_byp_len_0),
       .h2c_dsc_byp_ctl_0      (h2c_dsc_byp_ctl_0),
       .h2c_dsc_byp_load_0     (h2c_dsc_byp_load_0),
+
 
 
       .usr_irq_req  (usr_irq_req),
@@ -408,6 +411,37 @@ module top #
         .descBypC2H_srcAddr(c2h_dsc_byp_src_addr_0),
         .descBypC2H_length(c2h_dsc_byp_len_0),
         .descBypC2H_ctrl(c2h_dsc_byp_ctl_0)
+    );
+
+
+    ila_0 your_instance_name (
+      .clk(user_clk), // input wire clk
+
+
+      .probe0(c2h_dsc_byp_src_addr_0), // input wire [31:0]  probe0  
+      .probe1(c2h_dsc_byp_dst_addr_0), // input wire [31:0]  probe1 
+      .probe2(c2h_dsc_byp_len_0), // input wire [31:0]  probe2 
+      .probe3(c2h_dsc_byp_ctl_0), // input wire [31:0]  probe3 
+      .probe4(h2c_dsc_byp_src_addr_0), // input wire [31:0]  probe4 
+      .probe5(h2c_dsc_byp_dst_addr_0), // input wire [31:0]  probe5 
+      .probe6(h2c_dsc_byp_len_0), // input wire [31:0]  probe6 
+      .probe7(h2c_dsc_byp_ctl_0), // input wire [31:0]  probe7 
+      .probe8(s_axis_c2h_tdata_0), // input wire [255:0]  probe8 
+      .probe9(m_axis_h2c_tdata_0), // input wire [255:0]  probe9 
+      .probe10(s_axis_c2h_tvalid_0), // input wire [0:0]  probe10 
+      .probe11(s_axis_c2h_tready_0), // input wire [0:0]  probe11 
+      .probe12(m_axis_h2c_tvalid_0), // input wire [0:0]  probe12 
+      .probe13(m_axis_h2c_tready_0), // input wire [0:0]  probe13 
+      .probe14(s_axis_c2h_tlast_0), // input wire [0:0]  probe14 
+      .probe15(m_axis_h2c_tlast_0), // input wire [0:0]  probe15 
+      .probe16(c2h_dsc_byp_ready_0), // input wire [0:0]  probe16 
+      .probe17(c2h_dsc_byp_load_0), // input wire [0:0]  probe17 
+      .probe18(h2c_dsc_byp_ready_0), // input wire [0:0]  probe18 
+      .probe19(h2c_dsc_byp_load_0), // input wire [0:0]  probe19 
+      .probe20(m_axil_awaddr), // input wire [31:0]  probe20 
+      .probe21(m_axil_wdata), // input wire [31:0]  probe21 
+      .probe22(m_axil_awvalid), // input wire [0:0]  probe22 
+      .probe23(m_axil_wvalid) // input wire [0:0]  probe23
     );
 
 endmodule

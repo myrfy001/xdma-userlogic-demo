@@ -25,10 +25,10 @@ Integer bypass_CONTROL_FLAGS = 'h01;
 
 typedef enum {
     CtlRegAddrH2cSourceLow = 'h0000,
-    CtlRegAddrH2cSourceHigh = 'h0001,
-    CtlRegAddrC2hSourceLow = 'h0002,
-    CtlRegAddrC2hSourceHigh = 'h0003,
-    CtlRegAddTransSize = 'h0004
+    CtlRegAddrH2cSourceHigh = 'h0004,
+    CtlRegAddrC2hSourceLow = 'h0008,
+    CtlRegAddrC2hSourceHigh = 'h00C,
+    CtlRegAddTransSize = 'h0010
 } ControlRegisterAddress deriving(Bits, Eq);
 
 (*always_enabled, always_ready*)
