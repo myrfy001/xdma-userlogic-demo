@@ -103,6 +103,11 @@ module mkUserLogic(UserLogic#(CONTROL_ADDR_WIDTH, CONTROL_DATA_STRB_WIDTH));
         ctrlWrRespFifo.enq(0);
     endrule
 
+    rule respondToControlCmdRead;
+        ctrlRdAddrFifo.deq;
+        ctrlRdDataFifo.enq(Axi4LiteRdData{rResp: 'h0, rData: 'hABCD4321});
+    endrule
+    
     interface ctlAxil = ctlAxilSlave;
     interface dataAxisH2C = rawAxiStreamSlave;
     interface  dataAxisC2H = rawAxiStreamMaster;

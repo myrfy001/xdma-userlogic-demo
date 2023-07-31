@@ -51,6 +51,9 @@ proc runSynthDesign {args} {
     synth_design -top $top_module -retiming
     write_checkpoint -force $dir_output/post_synth_design.dcp
     write_xdc -force -exclude_physical $dir_output/post_synth.xdc
+
+    source batch_insert_ila.tcl
+    batch_insert_ila 4096
 }
 
 
