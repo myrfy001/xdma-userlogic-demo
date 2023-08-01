@@ -29,8 +29,10 @@ proc runGenerateIP {args} {
 }
 
 proc runSynthIP {args} {
-    global dir_output top_module dir_ip_gen
+    global dir_output top_module dir_ip_gen dir_xdc
 
+    read_xdc [ glob $dir_xdc/*.xdc ]
+    
     read_ip [glob $dir_ip_gen/**/*.xci]
     # The following line will generate a .dcp checkpoint file, so no need to create by ourselves
     synth_ip [ get_ips * ] -quiet
@@ -52,8 +54,8 @@ proc runSynthDesign {args} {
     write_checkpoint -force $dir_output/post_synth_design.dcp
     write_xdc -force -exclude_physical $dir_output/post_synth.xdc
 
-    source batch_insert_ila.tcl
-    batch_insert_ila 4096
+    # source batch_insert_ila.tcl
+    # batch_insert_ila 4096
 }
 
 
@@ -158,6 +160,48 @@ proc runRoute {args} {
 }
 
 
+proc runPostRouteReport {args} {
+    global dir_output target_clks max_net_path_num
+
+    if {[dict get $args -open_checkpoint] == true} {
+        open_checkpoint $dir_output/post_route.dcp
+    }
+
+    report_timing_summary -report_unconstrained -warn_on_violation -file $dir_output/post_route_timing_summary.rpt
+    report_timing -of_objects [get_timing_paths -hold -to [get_clocks $target_clks] -max_paths $max_net_path_num -filter { LOGIC_LEVELS >= 4 && LOGIC_LEVELS <= 40 }] -file $dir_output/post_route_long_paths.rpt
+    report_methodology -file $dir_output/post_route_methodology.rpt
+    report_timing -max $max_net_path_num -slack_less_than 0 -file $dir_output/post_route_timing.rpt
+
+    report_route_status -file $dir_output/post_route_status.rpt
+    report_drc -file $dir_output/post_route_drc.rpt
+    report_drc -ruledeck methodology_checks -file $dir_output/post_route_drc_methodology.rpt
+    report_drc -ruledeck timing_checks -file $dir_output/post_route_drc_timing.rpt
+    # Check unique control sets < 7.5% of total slices, at most 15%
+    report_control_sets -verbose -file $dir_output/post_route_control_sets.rpt
+
+    report_power -file $dir_output/post_route_power.rpt
+    report_power_opt -file $dir_output/post_route_power_opt.rpt
+    report_utilization -file $dir_output/post_route_util.rpt
+    report_ram_utilization -detail -file $dir_output/post_route_ram_utils.rpt
+    # Check fanout < 25K
+    report_high_fanout_nets -file $dir_output/post_route_fanout.rpt
+
+    report_design_analysis -hold -max_paths $max_net_path_num -file $dir_output/post_route_design_hold_timing.rpt
+    # Check initial estimated router congestion level no more than 5, type (global, long, short) and top cells
+    report_design_analysis -congestion -file $dir_output/post_route_congestion.rpt
+    # Check difficult modules (>15K cells) with high Rent Exponent (complex logic cone) >= 0.65 and/or Avg. Fanout >= 4
+    report_design_analysis -complexity -file $dir_output/post_route_complexity.rpt; # -hierarchical_depth
+    # If congested, check problematic cells using report_utilization -cells
+    # If congested, try NetDelay* for UltraScale+, or try SpredLogic* for UltraScale in implementation strategy
+
+    xilinx::designutils::report_failfast -detailed_reports impl -file $dir_output/post_route_failfast.rpt
+    # xilinx::ultrafast::report_io_reg -file $dir_output/post_route_io_reg.rpt
+    report_io -file $dir_output/post_route_io.rpt
+    report_pipeline_analysis -file $dir_output/post_route_pipeline.rpt
+    report_qor_assessment -report_all_suggestions -csv_output_dir $dir_output -file $dir_output/post_route_qor_assess.rpt
+    report_qor_suggestions -report_all_suggestions -csv_output_dir $dir_output -file $dir_output/post_route_qor_suggest.rpt
+}
+
 proc runWriteBitStream {args} {
     global dir_output top_module
 
@@ -176,16 +220,21 @@ proc runProgramDevice {args} {
     open_hw_target
     current_hw_device [get_hw_devices xcvu13p_0]
     refresh_hw_device -update_hw_probes false [lindex [get_hw_devices xcvu13p_0] 0]
+    
+    # set_property PROBES.FILE {/home/mingheng/xdma_0_ex/xdma_0_ex.runs/impl_1/top.ltx} [get_hw_devices xcvu13p_0]
+    # set_property FULL_PROBES.FILE {/home/mingheng/xdma_0_ex/xdma_0_ex.runs/impl_1/top.ltx} [get_hw_devices xcvu13p_0]
+
     set_property PROGRAM.FILE $dir_output/top.bit [get_hw_devices xcvu13p_0]
     program_hw_devices [get_hw_devices xcvu13p_0]
 }
 
 # runGenerateIP -open_checkpoint false
 # runSynthIP -open_checkpoint false
-# addExtFiles -open_checkpoint false
-# runSynthDesign -open_checkpoint false
-# # #runPostSynthReport -open_checkpoint false
-# runPlacement -open_checkpoint false
-# runRoute -open_checkpoint false
-# runWriteBitStream -open_checkpoint false
+addExtFiles -open_checkpoint false
+runSynthDesign -open_checkpoint false
+runPostSynthReport -open_checkpoint false
+runPlacement -open_checkpoint false
+runRoute -open_checkpoint false
+runPostRouteReport -open_checkpoint false
+runWriteBitStream -open_checkpoint false
 runProgramDevice -open_checkpoint false
