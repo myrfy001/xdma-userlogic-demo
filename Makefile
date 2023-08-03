@@ -14,7 +14,7 @@ TARGETFILE ?= $(DIR_BSV_SRC)/simple_user_logic.bsv
 BSV_TOPMODULE ?= mkUserLogic
 SIM_TOPMODULE ?= mkTB
 VERILOG_TOPMODULE ?= top
-TARGET_CLOCKS ?= main_clock
+TARGET_CLOCKS ?= user_clk
 MAX_NET_PATH_NUM ?= 1000
 
 export DIR_OUTPUT
