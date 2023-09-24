@@ -54,8 +54,8 @@ proc runSynthDesign {args} {
     write_checkpoint -force $dir_output/post_synth_design.dcp
     write_xdc -force -exclude_physical $dir_output/post_synth.xdc
 
-    # source batch_insert_ila.tcl
-    # batch_insert_ila 4096
+    source batch_insert_ila.tcl
+    batch_insert_ila 4096
 }
 
 
@@ -115,8 +115,8 @@ proc runPlacement {args} {
         open_checkpoint $dir_output/post_synth_design.dcp
     }
 
-    # opt_design -remap
-    # power_opt_design
+    opt_design -remap -verbose
+    power_opt_design
     place_design
     # Optionally run optimization if there are timing violations after placement
     if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] < 0} {
@@ -232,9 +232,9 @@ proc runProgramDevice {args} {
 # runSynthIP -open_checkpoint false
 addExtFiles -open_checkpoint false
 runSynthDesign -open_checkpoint false
-runPostSynthReport -open_checkpoint false
+# runPostSynthReport -open_checkpoint false
 runPlacement -open_checkpoint false
 runRoute -open_checkpoint false
-runPostRouteReport -open_checkpoint false
+# runPostRouteReport -open_checkpoint false
 runWriteBitStream -open_checkpoint false
-runProgramDevice -open_checkpoint false
+# runProgramDevice -open_checkpoint false

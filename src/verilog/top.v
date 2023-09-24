@@ -56,17 +56,10 @@
 
 module top #
   (
-   parameter PL_LINK_CAP_MAX_LINK_WIDTH          = 8,            // 1- X1; 2 - X2; 4 - X4; 8 - X8
-   parameter PL_SIM_FAST_LINK_TRAINING           = "FALSE",      // Simulation Speedup
+   parameter PL_LINK_CAP_MAX_LINK_WIDTH          = 16,            // 1- X1; 2 - X2; 4 - X4; 8 - X8
    parameter PL_LINK_CAP_MAX_LINK_SPEED          = 4,             // 1- GEN1; 2 - GEN2; 4 - GEN3
-   parameter C_DATA_WIDTH                        = 256 ,
-   parameter EXT_PIPE_SIM                        = "FALSE",  // This Parameter has effect on selecting Enable External PIPE Interface in GUI.
-   parameter C_ROOT_PORT                         = "FALSE",      // PCIe block is in root port mode
-   parameter C_DEVICE_NUMBER                     = 0,            // Device number for Root Port configurations only
-   parameter AXIS_CCIX_RX_TDATA_WIDTH     = 256, 
-   parameter AXIS_CCIX_TX_TDATA_WIDTH     = 256,
-   parameter AXIS_CCIX_RX_TUSER_WIDTH     = 46,
-   parameter AXIS_CCIX_TX_TUSER_WIDTH     = 46
+   parameter C_ADDR_WIDTH                        = 64,
+   parameter C_DATA_WIDTH                        = 512
    )
    (
     output [(PL_LINK_CAP_MAX_LINK_WIDTH - 1) : 0] pci_exp_txp,
@@ -90,12 +83,7 @@ module top #
    // Local Parameters derived from user selection
    localparam integer 				   USER_CLK_FREQ         = ((PL_LINK_CAP_MAX_LINK_SPEED == 3'h4) ? 5 : 4);
    localparam TCQ = 1;
-   localparam C_S_AXI_ID_WIDTH = 4; 
-   localparam C_M_AXI_ID_WIDTH = 4; 
-   localparam C_S_AXI_DATA_WIDTH = C_DATA_WIDTH;
-   localparam C_M_AXI_DATA_WIDTH = C_DATA_WIDTH;
-   localparam C_S_AXI_ADDR_WIDTH = 64;
-   localparam C_M_AXI_ADDR_WIDTH = 64;
+
 
    localparam C_NUM_USR_IRQ	 = 1;
 
@@ -133,83 +121,38 @@ module top #
 
   // User Clock LED Heartbeat
      reg [25:0] 			     user_clk_heartbeat;
-     reg [((2*C_NUM_USR_IRQ)-1):0]		usr_irq_function_number=0;
      reg [C_NUM_USR_IRQ-1:0] 		     usr_irq_req = 0;
      wire [C_NUM_USR_IRQ-1:0] 		     usr_irq_ack;
 
-      //-- AXI Master Write Address Channel
-     wire [C_M_AXI_ADDR_WIDTH-1:0] m_axi_awaddr;
-     wire [C_M_AXI_ID_WIDTH-1:0] m_axi_awid;
-     wire [2:0] 		 m_axi_awprot;
-     wire [1:0] 		 m_axi_awburst;
-     wire [2:0] 		 m_axi_awsize;
-     wire [3:0] 		 m_axi_awcache;
-     wire [7:0] 		 m_axi_awlen;
-     wire 			 m_axi_awlock;
-     wire 			 m_axi_awvalid;
-     wire 			 m_axi_awready;
-
-     //-- AXI Master Write Data Channel
-     wire [C_M_AXI_DATA_WIDTH-1:0]     m_axi_wdata;
-     wire [(C_M_AXI_DATA_WIDTH/8)-1:0] m_axi_wstrb;
-     wire 			       m_axi_wlast;
-     wire 			       m_axi_wvalid;
-     wire 			       m_axi_wready;
-     //-- AXI Master Write Response Channel
-     wire 			       m_axi_bvalid;
-     wire 			       m_axi_bready;
-     wire [C_M_AXI_ID_WIDTH-1 : 0]     m_axi_bid ;
-     wire [1:0]                        m_axi_bresp ;
-
-     //-- AXI Master Read Address Channel
-     wire [C_M_AXI_ID_WIDTH-1 : 0]     m_axi_arid;
-     wire [C_M_AXI_ADDR_WIDTH-1:0]     m_axi_araddr;
-     wire [7:0]                        m_axi_arlen;
-     wire [2:0]                        m_axi_arsize;
-     wire [1:0]                        m_axi_arburst;
-     wire [2:0] 		       m_axi_arprot;
-     wire 			       m_axi_arvalid;
-     wire 			       m_axi_arready;
-     wire 			       m_axi_arlock;
-     wire [3:0] 		       m_axi_arcache;
-
-     //-- AXI Master Read Data Channel
-     wire [C_M_AXI_ID_WIDTH-1 : 0]   m_axi_rid;
-     wire [C_M_AXI_DATA_WIDTH-1:0]   m_axi_rdata;
-     wire [1:0] 		     m_axi_rresp;
-     wire 			     m_axi_rvalid;
-     wire 			     m_axi_rready;
 
 
 
-
-
-//////////////////////////////////////////////////  LITE
+//////////////////////////////////////////////////
    //-- AXI Master Write Address Channel
-    wire [31:0] m_axil_awaddr;
-    wire [2:0]  m_axil_awprot;
-    wire 	m_axil_awvalid;
-    wire 	m_axil_awready;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [C_ADDR_WIDTH-1:0] m_axib_awaddr;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [2:0]  m_axib_awprot;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire 	m_axib_awvalid;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire 	m_axib_awready;
 
     //-- AXI Master Write Data Channel
-    wire [31:0] m_axil_wdata;
-    wire [3:0]  m_axil_wstrb;
-    wire 	m_axil_wvalid;
-    wire 	m_axil_wready;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [C_DATA_WIDTH-1:0] m_axib_wdata;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [C_DATA_WIDTH/8-1:0]  m_axib_wstrb;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire 	m_axib_wvalid;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire 	m_axib_wready;
     //-- AXI Master Write Response Channel
-    wire 	m_axil_bvalid;
-    wire 	m_axil_bready;
+    wire 	m_axib_bvalid;
+    wire 	m_axib_bready;
     //-- AXI Master Read Address Channel
-    wire [31:0] m_axil_araddr;
-    wire [2:0]  m_axil_arprot;
-    wire 	m_axil_arvalid;
-    wire 	m_axil_arready;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [C_ADDR_WIDTH-1:0] m_axib_araddr;
+    wire [2:0]  m_axib_arprot;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire 	m_axib_arvalid;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire 	m_axib_arready;
     //-- AXI Master Read Data Channel
-    wire [31:0] m_axil_rdata;
-    wire [1:0]  m_axil_rresp;
-    wire 	m_axil_rvalid;
-    wire 	m_axil_rready;
-    wire [1:0]  m_axil_bresp;
+    (*mark_debug,mark_debug_valid="true",mark_debug_clock="user_clk"*)wire [C_DATA_WIDTH-1:0] m_axib_rdata;
+    wire [1:0]  m_axib_rresp;
+    wire 	m_axib_rvalid;
+    wire 	m_axib_rready;
+    wire [1:0]  m_axib_bresp;
 
     wire [2:0]    msi_vector_width;
     wire          msi_enable;
@@ -295,31 +238,33 @@ module top #
       .m_axis_h2c_tready_0(m_axis_h2c_tready_0),
       .m_axis_h2c_tkeep_0(m_axis_h2c_tkeep_0),
 
-      // LITE interface   
+      // PCIe Bypass Bridge interface   
       //-- AXI Master Write Address Channel
-      .m_axil_awaddr    (m_axil_awaddr),
-      .m_axil_awprot    (m_axil_awprot),
-      .m_axil_awvalid   (m_axil_awvalid),
-      .m_axil_awready   (m_axil_awready),
+      .m_axib_awaddr    (m_axib_awaddr),
+      .m_axib_awprot    (m_axib_awprot),
+      .m_axib_awvalid   (m_axib_awvalid),
+      .m_axib_awready   (m_axib_awready),
       //-- AXI Master Write Data Channel
-      .m_axil_wdata     (m_axil_wdata),
-      .m_axil_wstrb     (m_axil_wstrb),
-      .m_axil_wvalid    (m_axil_wvalid),
-      .m_axil_wready    (m_axil_wready),
+      .m_axib_wdata     (m_axib_wdata),
+      .m_axib_wstrb     (m_axib_wstrb),
+      .m_axib_wvalid    (m_axib_wvalid),
+      .m_axib_wready    (m_axib_wready),
       //-- AXI Master Write Response Channel
-      .m_axil_bvalid    (m_axil_bvalid),
-      .m_axil_bresp     (m_axil_bresp),
-      .m_axil_bready    (m_axil_bready),
+      .m_axib_bvalid    (m_axib_bvalid),
+      .m_axib_bresp     (m_axib_bresp),
+      .m_axib_bready    (m_axib_bready),
       //-- AXI Master Read Address Channel
-      .m_axil_araddr    (m_axil_araddr),
-      .m_axil_arprot    (m_axil_arprot),
-      .m_axil_arvalid   (m_axil_arvalid),
-      .m_axil_arready   (m_axil_arready),
-      .m_axil_rdata     (m_axil_rdata),
+      .m_axib_araddr    (m_axib_araddr),
+      .m_axib_arprot    (m_axib_arprot),
+      .m_axib_arvalid   (m_axib_arvalid),
+      .m_axib_arready   (m_axib_arready),
+
       //-- AXI Master Read Data Channel
-      .m_axil_rresp     (m_axil_rresp),
-      .m_axil_rvalid    (m_axil_rvalid),
-      .m_axil_rready    (m_axil_rready),
+      .m_axib_rdata     (m_axib_rdata),
+      .m_axib_rlast     (1),  // todo FIX me
+      .m_axib_rresp     (m_axib_rresp),
+      .m_axib_rvalid    (m_axib_rvalid),
+      .m_axib_rready    (m_axib_rready),
 
 
 
@@ -368,25 +313,25 @@ module top #
   mkUserLogic user_logic_inst(
         .CLK(user_clk),
         .RST_N(user_resetn),
-        .ctlAxil_awvalid(m_axil_awvalid),
-        .ctlAxil_awaddr(m_axil_awaddr),
-        // .ctlAxil_awprot(m_axil_awprot),
-        .ctlAxil_awready(m_axil_awready),
-        .ctlAxil_wvalid(m_axil_wvalid),
-        .ctlAxil_wdata(m_axil_wdata),
-        .ctlAxil_wstrb(m_axil_wstrb),
-        .ctlAxil_wready(m_axil_wready),
-        .ctlAxil_bvalid(m_axil_bvalid),
-        .ctlAxil_bresp(m_axil_bresp),
-        .ctlAxil_bready(m_axil_bready),
-        .ctlAxil_arvalid(m_axil_arvalid),
-        .ctlAxil_araddr(m_axil_araddr),
-        // .ctlAxil_arprot(m_axil_arprot),
-        .ctlAxil_arready(m_axil_arready),
-        .ctlAxil_rvalid(m_axil_rvalid),
-        .ctlAxil_rresp(m_axil_rresp),
-        .ctlAxil_rdata(m_axil_rdata),
-        .ctlAxil_rready(m_axil_rready),
+        .ctlAxi4_awvalid(m_axib_awvalid),
+        .ctlAxi4_awaddr(m_axib_awaddr),
+        // .ctlAxi4_awprot(m_axib_awprot),
+        .ctlAxi4_awready(m_axib_awready),
+        .ctlAxi4_wvalid(m_axib_wvalid),
+        .ctlAxi4_wdata(m_axib_wdata),
+        .ctlAxi4_wstrb(m_axib_wstrb),
+        .ctlAxi4_wready(m_axib_wready),
+        .ctlAxi4_bvalid(m_axib_bvalid),
+        .ctlAxi4_bresp(m_axib_bresp),
+        .ctlAxi4_bready(m_axib_bready),
+        .ctlAxi4_arvalid(m_axib_arvalid),
+        .ctlAxi4_araddr(m_axib_araddr),
+        // .ctlAxi4_arprot(m_axib_arprot),
+        .ctlAxi4_arready(m_axib_arready),
+        .ctlAxi4_rvalid(m_axib_rvalid),
+        .ctlAxi4_rresp(m_axib_rresp),
+        .ctlAxi4_rdata(m_axib_rdata),
+        .ctlAxi4_rready(m_axib_rready),
         .dataAxisH2C_tvalid(m_axis_h2c_tvalid_0),
         .dataAxisH2C_tdata(m_axis_h2c_tdata_0),
         .dataAxisH2C_tkeep(m_axis_h2c_tkeep_0),
@@ -412,36 +357,5 @@ module top #
         .descBypC2H_length(c2h_dsc_byp_len_0),
         .descBypC2H_ctrl(c2h_dsc_byp_ctl_0)
     );
-
-
-    // ila_0 your_instance_name (
-    //   .clk(user_clk), // input wire clk
-
-
-    //   .probe0(c2h_dsc_byp_src_addr_0), // input wire [31:0]  probe0  
-    //   .probe1(c2h_dsc_byp_dst_addr_0), // input wire [31:0]  probe1 
-    //   .probe2(c2h_dsc_byp_len_0), // input wire [31:0]  probe2 
-    //   .probe3(c2h_dsc_byp_ctl_0), // input wire [31:0]  probe3 
-    //   .probe4(h2c_dsc_byp_src_addr_0), // input wire [31:0]  probe4 
-    //   .probe5(h2c_dsc_byp_dst_addr_0), // input wire [31:0]  probe5 
-    //   .probe6(h2c_dsc_byp_len_0), // input wire [31:0]  probe6 
-    //   .probe7(h2c_dsc_byp_ctl_0), // input wire [31:0]  probe7 
-    //   .probe8(s_axis_c2h_tdata_0), // input wire [255:0]  probe8 
-    //   .probe9(m_axis_h2c_tdata_0), // input wire [255:0]  probe9 
-    //   .probe10(s_axis_c2h_tvalid_0), // input wire [0:0]  probe10 
-    //   .probe11(s_axis_c2h_tready_0), // input wire [0:0]  probe11 
-    //   .probe12(m_axis_h2c_tvalid_0), // input wire [0:0]  probe12 
-    //   .probe13(m_axis_h2c_tready_0), // input wire [0:0]  probe13 
-    //   .probe14(s_axis_c2h_tlast_0), // input wire [0:0]  probe14 
-    //   .probe15(m_axis_h2c_tlast_0), // input wire [0:0]  probe15 
-    //   .probe16(c2h_dsc_byp_ready_0), // input wire [0:0]  probe16 
-    //   .probe17(c2h_dsc_byp_load_0), // input wire [0:0]  probe17 
-    //   .probe18(h2c_dsc_byp_ready_0), // input wire [0:0]  probe18 
-    //   .probe19(h2c_dsc_byp_load_0), // input wire [0:0]  probe19 
-    //   .probe20(m_axil_awaddr), // input wire [31:0]  probe20 
-    //   .probe21(m_axil_wdata), // input wire [31:0]  probe21 
-    //   .probe22(m_axil_awvalid), // input wire [0:0]  probe22 
-    //   .probe23(m_axil_wvalid) // input wire [0:0]  probe23
-    // );
 
 endmodule
